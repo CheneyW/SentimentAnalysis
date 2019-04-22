@@ -96,14 +96,14 @@ def main():
 
 def svm_predict(s):
     words = jieba.lcut(s)
-    w2v = Word2Vec.load(os.path.join(SVM_MODEL_PATH, 'w2v_model.pkl'))
+    w2v = Word2Vec.load(os.path.join(MODEL_PATH, 'w2v_model.pkl'))
     temp = w2v.wv.__getitem__('好')
     print(type(temp))
     print(len(temp))
     print(temp)
     words_vecs = text2vec(words, w2v)
 
-    clf = joblib.load(os.path.join(SVM_MODEL_PATH, 'svm_model.pkl'))
+    clf = joblib.load(os.path.join(MODEL_PATH, 'svm_model.pkl'))
     result = clf.predict(words_vecs)
     if int(result[0]) == 1:
         print(s, ' positive')
@@ -114,5 +114,5 @@ def svm_predict(s):
 if __name__ == '__main__':
     main()
 
-    s = "哈哈哈"
-    svm_predict(s)
+    # s = "哈哈哈"
+    # svm_predict(s)

@@ -25,7 +25,6 @@ MODEL_PATH = os.path.join(os.pardir, 'model', 'lstm')
 n_dim = 300
 n_exposures = 10
 max_len = 100
-input_length = 100
 batch_size = 32
 n_epoch = 4
 
@@ -39,7 +38,7 @@ def load_file():
     neg = [jieba.lcut(x) for x in get_text(os.path.join(DATA_PATH, 'sample.negative.txt'))]
     pos = [jieba.lcut(x) for x in get_text(os.path.join(DATA_PATH, 'sample.positive.txt'))]
     docs = np.concatenate((neg, pos))
-    y = np.concatenate((np.ones(len(pos)), np.zeros(len(neg))))  # 1-正例   0-反例
+    y = np.concatenate((np.zeros(len(neg)), np.ones(len(pos))))  # 0-反例 1-正例
     return docs, y
 
 
@@ -87,7 +86,7 @@ def create_dictionaries(model, docs):
     return n_symbols, idx2vec, docs2idx
 
 
-def train_lstm(n_symbols, embedding_weights, x_train, y_train, x_test, y_test):
+def train_lstm(n_symbols, embedding_weights, x_train, y_train, x_test=None, y_test=None):
     print('Defining a Simple Keras Model...')
     model = Sequential()  # Sequential: 多个网络层的线性堆叠
     # Embedding: 索引->固定长度的密集向量
@@ -95,7 +94,7 @@ def train_lstm(n_symbols, embedding_weights, x_train, y_train, x_test, y_test):
                         input_dim=n_symbols,  # 词汇表大小
                         mask_zero=True,  # 把 0 看作为一个应该被遮蔽的特殊的 "padding" 值, 索引 0 不能被用于词汇表中
                         weights=[embedding_weights],
-                        input_length=input_length))  # 输入序列的长度
+                        input_length=max_len))  # 输入序列的长度
     model.add(LSTM(activation="sigmoid",  # 选取激活函数
                    units=50))  # 输出维度
     model.add(Dropout(0.5))
@@ -111,15 +110,16 @@ def train_lstm(n_symbols, embedding_weights, x_train, y_train, x_test, y_test):
               epochs=n_epoch,  # 训练在样本上迭代次数
               verbose=1)  # 显示进度条
 
-    print('Evaluate...')
-    score = model.evaluate(x_test, y_test, batch_size=batch_size)
-    print('Test score:', score)
-
     print('Save model...')
     yaml_string = model.to_yaml()
     with open(os.path.join(MODEL_PATH, 'lstm.yml'), 'w') as outfile:
         outfile.write(yaml.dump(yaml_string, default_flow_style=True))
     model.save_weights(os.path.join(MODEL_PATH, 'lstm.h5'))
+
+    if x_test is not None and y_test is not None:
+        print('Evaluate...')
+        score = model.evaluate(x_test, y_test, batch_size=batch_size)
+        print('Test score:', score)
 
 
 def main():
@@ -127,21 +127,11 @@ def main():
     n_symbols, idx2vec, docs2idx = word2vec_train(docs)
     print(idx2vec.shape)
 
+    # train_lstm(n_symbols, idx2vec, docs2idx, y)
+
     x_train, x_test, y_train, y_test = train_test_split(docs2idx, y, test_size=0.2)
-
-    # # one-hot
-    # y_train = to_categorical(y_train, num_classes=2)
-    # y_test = to_categorical(y_test, num_classes=2)
-
     train_lstm(n_symbols, idx2vec, x_train, y_train, x_test, y_test)
 
 
 if __name__ == '__main__':
     main()
-
-    # docs, y = load_file()
-    # maxval = 0
-    # for doc in docs:
-    #     if len(doc) > maxval:
-    #         maxval = len(doc)
-    # print(maxval)
