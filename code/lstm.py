@@ -127,10 +127,10 @@ def main():
     n_symbols, idx2vec, docs2idx = word2vec_train(docs)
     print(idx2vec.shape)
 
-    # train_lstm(n_symbols, idx2vec, docs2idx, y)
+    train_lstm(n_symbols, idx2vec, docs2idx, y)
 
-    x_train, x_test, y_train, y_test = train_test_split(docs2idx, y, test_size=0.2)
-    train_lstm(n_symbols, idx2vec, x_train, y_train, x_test, y_test)
+    # x_train, x_test, y_train, y_test = train_test_split(docs2idx, y, test_size=0.2)
+    # train_lstm(n_symbols, idx2vec, x_train, y_train, x_test, y_test)
 
 
 if __name__ == '__main__':
